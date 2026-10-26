@@ -35,6 +35,7 @@ even that can be replaced by a fully offline backend.
 - [Troubleshooting](#troubleshooting)
 - [Tests](#tests)
 - [Project layout](#project-layout)
+- [License](#license)
 
 ---
 
@@ -473,3 +474,8 @@ tests/               automated tests (no API needed)
 
 The demo images in this README were made with a generated gradient background, a synthesised test
 tone and placeholder lyrics.
+
+## License
+
+[MIT](LICENSE) – free to use, modify and share. ElevenLabs, ffmpeg, Whisper/stable-ts and demucs are
+separate projects with their own terms.
