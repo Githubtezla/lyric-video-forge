@@ -1,0 +1,36 @@
+{
+  "_note": "General settings. For portrait (9:16) set width 1080 and height 1920. All fields are explained in the README.",
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "default_style": "grimdark",
+  "default_language": "en",
+  "default_backend": "elevenlabs",
+  "video": {
+    "crf": 18,
+    "preset": "medium",
+    "audio_bitrate": "192k"
+  },
+  "preview": {
+    "lowres_factor": 0.5,
+    "crf": 28,
+    "open_after": true
+  },
+  "quality": {
+    "min_line_seconds": 0.3,
+    "max_line_seconds": 12.0,
+    "loss_factor": 2.0,
+    "max_first_word_seconds": 3.0,
+    "max_gap_seconds": 20.0
+  },
+  "alignment": {
+    "line_hold_ms": 0,
+    "api_line_separator": "\n"
+  },
+  "local": {
+    "whisper_model": "medium"
+  },
+  "web": {
+    "port": 8765
+  }
+}

@@ -1,0 +1,120 @@
+{
+  "_note": "Style presets. All fields are optional, missing values come from 'standard'. Pixel values refer to 1080 px on the shorter video side. Table of all fields in the README.",
+  "standard": {
+    "font": "Palatino Linotype",
+    "bold": true,
+    "size": 92,
+    "color": "#E8D9B0",
+    "outline_color": "#0B0705",
+    "outline_width": 7,
+    "shadow_color": "#000000",
+    "shadow_depth": 5,
+    "box": false,
+    "box_color": "#000000",
+    "box_opacity": 0.5,
+    "position": "middle",
+    "margin": 70,
+    "align": "center",
+    "uppercase": true,
+    "letter_spacing": 4,
+    "max_width_percent": 80,
+    "fade_in_ms": 400,
+    "fade_out_ms": 500,
+    "hold_ms": 1500,
+    "highlight": "reveal",
+    "word_fade_ms": 150,
+    "highlight_color": "#9E0B0B",
+    "background": {
+      "dim_percent": 0
+    }
+  },
+  "grimdark": {
+    "font": "Palatino Linotype",
+    "bold": true,
+    "size": 92,
+    "color": "#E8D9B0",
+    "outline_color": "#0B0705",
+    "outline_width": 7,
+    "shadow_color": "#000000",
+    "shadow_depth": 5,
+    "position": "middle",
+    "uppercase": true,
+    "letter_spacing": 4,
+    "max_width_percent": 80,
+    "fade_in_ms": 400,
+    "fade_out_ms": 500,
+    "hold_ms": 1500,
+    "highlight": "reveal",
+    "highlight_color": "#9E0B0B",
+    "word_fade_ms": 150,
+    "background": {
+      "dim_percent": 35
+    }
+  },
+  "clean": {
+    "font": "Arial",
+    "bold": true,
+    "size": 72,
+    "color": "#FFFFFF",
+    "outline_color": "#000000",
+    "outline_width": 3,
+    "shadow_depth": 2,
+    "position": "bottom",
+    "margin": 90,
+    "uppercase": false,
+    "letter_spacing": 0,
+    "fade_in_ms": 200,
+    "fade_out_ms": 250,
+    "hold_ms": 800,
+    "highlight": "none",
+    "background": {
+      "dim_percent": 10
+    }
+  },
+  "karaoke": {
+    "font": "Arial",
+    "bold": true,
+    "size": 80,
+    "color": "#FFFFFF",
+    "highlight_color": "#FFD23F",
+    "outline_color": "#1A1A1A",
+    "outline_width": 4,
+    "shadow_depth": 0,
+    "position": "bottom",
+    "margin": 110,
+    "uppercase": false,
+    "letter_spacing": 1,
+    "box": true,
+    "box_color": "#000000",
+    "box_opacity": 0.45,
+    "fade_in_ms": 150,
+    "fade_out_ms": 150,
+    "hold_ms": 600,
+    "highlight": "karaoke",
+    "background": {
+      "dim_percent": 0
+    }
+  },
+  "neon": {
+    "font": "Trebuchet MS",
+    "bold": true,
+    "size": 96,
+    "color": "#7DF9FF",
+    "outline_color": "#FF2E97",
+    "outline_width": 3,
+    "shadow_color": "#FF2E97",
+    "shadow_depth": 0,
+    "position": "middle",
+    "uppercase": true,
+    "letter_spacing": 6,
+    "max_width_percent": 80,
+    "fade_in_ms": 0,
+    "fade_out_ms": 400,
+    "hold_ms": 1200,
+    "highlight": "reveal",
+    "word_fade_ms": 180,
+    "background": {
+      "dim_percent": 30
+    }
+  }
+}

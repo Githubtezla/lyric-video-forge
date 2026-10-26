@@ -1,0 +1,23 @@
+# Secrets
+.env
+
+# Environment and models
+venv/
+.venv/
+models/
+__pycache__/
+*.pyc
+
+# Your own files and results
+input/*
+!input/.gitkeep
+output/*
+!output/.gitkeep
+fonts/*
+!fonts/.gitkeep
+
+# Editor / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

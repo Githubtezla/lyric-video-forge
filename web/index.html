@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lyric Video Forge</title>
+<style>
+  :root {
+    --bg: #121014;
+    --panel: #1c1920;
+    --panel-2: #24202a;
+    --line: #342f3b;
+    --text: #ece6dc;
+    --muted: #a39b91;
+    --accent: #c9a45c;
+    --accent-2: #e2c27e;
+    --danger: #d0564b;
+    --ok: #6fbf73;
+    --warn: #d9a441;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 14px/1.45 "Segoe UI", system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 12px 20px; border-bottom: 1px solid var(--line); background: #17141a;
+    position: sticky; top: 0; z-index: 10; }
+  header h1 { font-size: 17px; margin: 0 12px 0 0; letter-spacing: .5px; color: var(--accent-2); }
+  header .grow { flex: 1; }
+  main { display: grid; grid-template-columns: minmax(380px, 520px) 1fr; gap: 18px; padding: 18px 20px 40px; }
+  main > section { min-width: 0; }
+  @media (max-width: 1000px) { main { grid-template-columns: minmax(0, 1fr); } .preview-col { position: static !important; order: -1; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 8px; }
+  .card h2 .num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--panel-2); border: 1px solid var(--line); font-size: 12px; color: var(--accent-2); }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
+  button, .btn { background: var(--panel-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #1a1408; border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { background: var(--accent-2); }
+  button:disabled { opacity: .5; cursor: default; }
+  input[type=text], input[type=number], select, textarea { background: #141117; color: var(--text);
+    border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; font: inherit; }
+  textarea { width: 100%; font-family: Consolas, "Cascadia Mono", monospace; font-size: 12.5px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 12px;
+    border: 1px solid var(--line); background: var(--panel-2); }
+  .badge.ok { color: var(--ok); border-color: #355c38; }
+  .badge.warn { color: var(--warn); border-color: #6b5222; }
+  .badge.bad { color: var(--danger); border-color: #6b2e29; }
+  .files { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .drop { border: 1.5px dashed var(--line); border-radius: 9px; padding: 10px; text-align: center;
+    cursor: pointer; min-height: 110px; display: flex; flex-direction: column; justify-content: center;
+    gap: 6px; background: #17141b; transition: border-color .15s; }
+  .drop:hover, .drop.over { border-color: var(--accent); }
+  .drop .label { font-weight: 600; }
+  .drop .fname { color: var(--muted); font-size: 12px; word-break: break-word; }
+  .drop img { max-width: 100%; max-height: 70px; object-fit: contain; margin: 0 auto; border-radius: 4px; }
+  audio { width: 100%; margin-top: 10px; }
+  .log { background: #110f13; border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px;
+    font-family: Consolas, monospace; font-size: 12px; white-space: pre-wrap; max-height: 220px;
+    overflow: auto; margin-top: 10px; display: none; }
+  .log.show { display: block; }
+  .log .w { color: var(--warn); }
+  .log .e { color: var(--danger); }
+  .progress { height: 10px; background: #110f13; border: 1px solid var(--line); border-radius: 99px;
+    overflow: hidden; margin-top: 10px; display: none; }
+  .progress.show { display: block; }
+  .progress > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    transition: width .3s; }
+  .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; }
+  .group-title { grid-column: 1 / -1; margin: 10px 0 0; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--accent); border-top: 1px solid var(--line); padding-top: 8px; }
+  .field { display: flex; flex-direction: column; gap: 3px; }
+  .field label { font-size: 12px; color: var(--muted); }
+  .field .ctl { display: flex; gap: 6px; align-items: center; }
+  .field input[type=range] { flex: 1; accent-color: var(--accent); }
+  .field input[type=number] { width: 72px; }
+  .field input[type=color] { width: 44px; height: 30px; padding: 0; border: 1px solid var(--line);
+    border-radius: 6px; background: none; }
+  .field.check { flex-direction: row; align-items: center; gap: 8px; }
+  .field.check label { font-size: 13px; color: var(--text); }
+  .preview-col { position: sticky; top: 70px; align-self: start; }
+  .stage { background: #000; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+    position: relative; aspect-ratio: 16 / 9; display: grid; place-items: center; }
+  .stage img, .stage video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .stage .placeholder { color: var(--muted); padding: 20px; text-align: center; }
+  .stage .busy { position: absolute; top: 10px; right: 12px; font-size: 12px; color: var(--accent-2);
+    background: #000a; padding: 3px 8px; border-radius: 99px; display: none; }
+  .stage .busy.show { display: block; }
+  .timebar { display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+  .timebar input[type=range] { flex: 1; accent-color: var(--accent); }
+  .timebar .t { font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+  .active-line { margin-top: 8px; color: var(--muted); min-height: 20px; }
+  .warnings { margin-top: 8px; }
+  .warnings div { color: var(--warn); font-size: 12.5px; }
+  .dirty { color: var(--warn); font-size: 12px; display: none; }
+  .dirty.show { display: inline; }
+  video.result { width: 100%; border-radius: 8px; margin-top: 10px; background: #000; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--panel-2);
+    border: 1px solid var(--line); padding: 10px 16px; border-radius: 8px; z-index: 50; display: none;
+    max-width: 90vw; white-space: pre-wrap; }
+  .toast.show { display: block; }
+  .toast.err { border-color: var(--danger); color: #f2c3be; }
+  .trim { border: 1px solid var(--line); border-radius: 8px; padding: 10px; background: #17141b; }
+  .trim label { font-size: 13px; }
+  .field, .drop, .field .ctl { min-width: 0; }
+  .field .ctl > select, .field .ctl > input[type=text] { flex: 1; min-width: 0; width: 100%; }
+  .timebar input[type=range] { min-width: 0; }
+  @media (max-width: 640px) {
+    header { padding: 10px 12px; gap: 8px; }
+    header h1 { width: 100%; }
+    header select, #newProject { flex: 1 1 100%; min-width: 0; width: auto !important; }
+    main { padding: 12px; gap: 12px; }
+    .files, .style-grid { grid-template-columns: minmax(0, 1fr); }
+    .card { padding: 12px; }
+    .field input[type=range] { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lyric Video Forge</h1>
+  <label for="projectSelect" class="hint" style="margin:0">Project</label>
+  <select id="projectSelect"></select>
+  <input id="newProject" type="text" placeholder="New project: name" style="width:200px">
+  <button id="createProject">Create</button>
+  <span class="grow"></span>
+  <span id="keyBadge" class="badge"></span>
+  <button id="openFolder" title="Open the project folder in the file explorer">Open folder</button>
+</header>
+
+<main>
+  <section>
+    <!-- 1 Files -->
+    <div class="card">
+      <h2><span class="num">1</span>Files</h2>
+      <div class="files">
+        <div class="drop" data-kind="image"><span class="label">Image</span><span class="fname">drop here or click</span></div>
+        <div class="drop" data-kind="audio"><span class="label">Song</span><span class="fname">drop here or click</span></div>
+        <div class="drop" data-kind="text"><span class="label">Lyrics (.txt)</span><span class="fname">drop here or click</span></div>
+      </div>
+      <audio id="audioPlayer" controls preload="none" style="display:none"></audio>
+      <div class="row" style="margin-top:10px">
+        <button id="importInput">Import from input/</button>
+        <span id="inputInfo" class="hint" style="margin:0"></span>
+      </div>
+      <input id="fileInput" type="file" hidden>
+    </div>
+
+    <!-- 2 Lyrics -->
+    <div class="card">
+      <h2><span class="num">2</span>Lyrics <span id="textDirty" class="dirty">● not saved</span></h2>
+      <textarea id="lyrics" rows="8" placeholder="One sung line per line. Empty lines and [Chorus] are ignored."></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="saveText">Save lyrics</button>
+        <span id="textInfo" class="hint" style="margin:0"></span>
+      </div>
+    </div>
+
+    <!-- 3 Align -->
+    <div class="card">
+      <h2><span class="num">3</span>Align lyrics <span id="alignBadge" class="badge"></span></h2>
+      <div class="row">
+        <button id="alignBtn" class="primary">Align lyrics</button>
+        <label class="row" style="gap:6px"><input id="realign" type="checkbox"> redo at ElevenLabs (uses credits)</label>
+      </div>
+      <p class="hint">If an alignment for the same song and lyrics already exists, it is reused without an API call.</p>
+      <div id="alignLog" class="log"></div>
+    </div>
+
+    <!-- 4 SRT -->
+    <div class="card">
+      <h2><span class="num">4</span>Edit subtitles <span id="srtDirty" class="dirty">● not saved</span></h2>
+      <textarea id="srt" rows="10" placeholder="Created when aligning."></textarea>
+      <div class="row" style="margin-top:8px">
+        <button id="saveSrt">Save subtitles</button>
+        <span class="hint" style="margin:0">Fix times and text, then save.</span>
+      </div>
+    </div>
+
+    <!-- 5 Style -->
+    <div class="card">
+      <h2><span class="num">5</span>Look</h2>
+      <div class="row">
+        <label class="hint" style="margin:0">Preset</label>
+        <select id="presetSelect"></select>
+        <button id="loadPreset" title="Reset all values to the preset">Load preset</button>
+      </div>
+      <div id="styleForm" class="style-grid" style="margin-top:6px"></div>
+      <div class="row" style="margin-top:14px">
+        <input id="saveStyleName" type="text" placeholder="Name for new preset" style="width:200px">
+        <button id="saveStyle">Save as preset</button>
+      </div>
+      <p class="hint">Sizes refer to 1080 px on the shorter video side. Changes show up in the preview right away and are used for rendering.</p>
+    </div>
+
+    <!-- 6 Render -->
+    <div class="card">
+      <h2><span class="num">6</span>Render video</h2>
+      <div class="trim">
+        <div class="row">
+          <label for="trimEnd" style="min-width:120px">End of video</label>
+          <input id="trimEnd" type="text" placeholder="whole song" style="width:110px" title="e.g. 5:40 or 5:40.5 – empty = whole song">
+          <button id="trimFromVideo" title="Set the end to the current position in the video below">End = video position</button>
+          <button id="trimFromPreview" title="Set the end to the preview time on the right">End = preview time</button>
+          <button id="trimClear" title="Do not trim">whole song</button>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <label for="fadeOut" style="min-width:120px">Fade out at end</label>
+          <input id="fadeOut" type="number" min="0" max="20" step="0.5" value="2" style="width:70px"> s
+          <span id="trimInfo" class="hint" style="margin:0 0 0 8px"></span>
+        </div>
+        <p class="hint">Play the video below, pause at the desired spot, click “End = video position” and render again. Picture and sound fade out smoothly before the end.</p>
+      </div>
+      <div class="row" style="margin-top:10px"><button id="renderBtn" class="primary">Render video</button><span id="renderInfo" class="hint" style="margin:0"></span></div>
+      <div id="renderProgress" class="progress"><div></div></div>
+      <div id="renderLog" class="log"></div>
+      <video id="resultVideo" class="result" controls preload="metadata" style="display:none"></video>
+    </div>
+  </section>
+
+  <section class="preview-col">
+    <div class="stage" id="stage">
+      <div class="placeholder" id="stagePlaceholder">Choose a project and upload an image,<br>then the preview appears here.</div>
+      <img id="previewImg" alt="Preview" style="display:none">
+      <video id="clipVideo" controls style="display:none"></video>
+      <span class="busy" id="busy">Creating preview …</span>
+    </div>
+    <div class="timebar">
+      <button id="prevCue" title="previous line">◀</button>
+      <input id="timeSlider" type="range" min="0" max="60" step="0.05" value="0">
+      <button id="nextCue" title="next line">▶</button>
+      <span class="t" id="timeLabel">0:00.0</span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <select id="cueSelect" style="flex:1; min-width:0"></select>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="stillBtn">Still image</button>
+      <button id="clipBtn">10 s clip with sound</button>
+      <label class="row" style="gap:6px"><input id="fullRes" type="checkbox"> full resolution</label>
+    </div>
+    <div class="active-line" id="activeLine"></div>
+    <div class="warnings" id="warnings"></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+
+// ---------------------------------------------------------------- Style fields
+const FIELDS = [
+  { group: "Font" },
+  { key: "font", label: "Font", type: "font", wide: true },
+  { key: "size", label: "Size (px)", type: "range", min: 16, max: 220, step: 1 },
+  { key: "letter_spacing", label: "Letter spacing", type: "range", min: -5, max: 30, step: 0.5 },
+  { key: "bold", label: "bold", type: "check" },
+  { key: "uppercase", label: "UPPERCASE", type: "check" },
+  { key: "italic", label: "italic", type: "check" },
+  { group: "Colours" },
+  { key: "color", label: "Text colour", type: "color" },
+  { key: "highlight_color", label: "Highlight (line/karaoke)", type: "color" },
+  { key: "outline_color", label: "Outline", type: "color" },
+  { key: "outline_width", label: "Outline width", type: "range", min: 0, max: 20, step: 0.5 },
+  { key: "shadow_color", label: "Shadow", type: "color" },
+  { key: "shadow_depth", label: "Shadow distance", type: "range", min: 0, max: 20, step: 0.5 },
+  { group: "Position" },
+  { key: "position", label: "Vertical", type: "select", options: [["bottom", "bottom"], ["middle", "middle"], ["top", "top"]] },
+  { key: "align", label: "Alignment", type: "select", options: [["left", "left"], ["center", "center"], ["right", "right"]] },
+  { key: "margin", label: "Distance to edge", type: "range", min: 0, max: 400, step: 5 },
+  { key: "max_width_percent", label: "Max. width (%)", type: "range", min: 20, max: 100, step: 1 },
+  { group: "Animation" },
+  { key: "highlight", label: "Mode", type: "select", wide: true, options: [
+      ["reveal", "Words appear one by one"], ["karaoke", "Karaoke (words change colour)"],
+      ["line", "Whole line in highlight colour"], ["none", "Whole line, normal"]] },
+  { key: "word_fade_ms", label: "Fade-in per word (ms)", type: "range", min: 0, max: 1000, step: 10 },
+  { key: "hold_ms", label: "Hold after last word (ms)", type: "range", min: 0, max: 5000, step: 100 },
+  { key: "fade_in_ms", label: "Line fade-in (ms)", type: "range", min: 0, max: 2000, step: 50 },
+  { key: "fade_out_ms", label: "Line fade-out (ms)", type: "range", min: 0, max: 2000, step: 50 },
+  { group: "Background" },
+  { key: "dim_percent", label: "Darken image (%)", type: "range", min: 0, max: 90, step: 1 },
+  { key: "box", label: "Box behind the text", type: "check" },
+  { key: "box_color", label: "Box colour", type: "color" },
+  { key: "box_opacity", label: "Box opacity", type: "range", min: 0, max: 1, step: 0.05 },
+];
+
+// ---------------------------------------------------------------- State
+const S = {
+  state: null, project: null, data: null, styleValues: {}, preset: null,
+  time: 0, previewBusy: false, previewPending: false, debounce: null,
+  textDirty: false, srtDirty: false, uploadKind: null, styleTouched: false,
+};
+
+// ---------------------------------------------------------------- Helpers
+function toast(msg, isError = false) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (isError ? " err" : "");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.className = "toast", isError ? 9000 : 3500);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts);
+  const type = res.headers.get("content-type") || "";
+  if (!res.ok) {
+    let msg = `Error ${res.status}`;
+    if (type.includes("json")) { const j = await res.json(); if (j.error) msg = j.error; }
+    throw new Error(msg);
+  }
+  return type.includes("json") ? res.json() : res;
+}
+const postJSON = (path, body) => api(path, {
+  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+const pUrl = (suffix = "") => `/api/project/${encodeURIComponent(S.project)}${suffix}`;
+
+function fmtTime(t) {
+  const m = Math.floor(t / 60), s = t - m * 60;
+  return `${m}:${s.toFixed(1).padStart(4, "0")}`;
+}
+
+function showLog(el, lines, error) {
+  el.className = "log show";
+  el.replaceChildren();
+  for (const l of lines) {
+    const d = document.createElement("div");
+    d.textContent = l;
+    if (l.startsWith("WARNING")) d.className = "w";
+    el.appendChild(d);
+  }
+  if (error) { const d = document.createElement("div"); d.className = "e"; d.textContent = "ERROR: " + error; el.appendChild(d); }
+  el.scrollTop = el.scrollHeight;
+}
+
+// ---------------------------------------------------------------- Style form
+function buildStyleForm() {
+  const form = $("styleForm");
+  form.replaceChildren();
+  for (const f of FIELDS) {
+    if (f.group) {
+      const g = document.createElement("div"); g.className = "group-title"; g.textContent = f.group; form.appendChild(g);
+      continue;
+    }
+    const wrap = document.createElement("div");
+    wrap.className = "field" + (f.type === "check" ? " check" : "");
+    if (f.wide) wrap.style.gridColumn = "1 / -1";
+    const id = "st_" + f.key;
+    const label = document.createElement("label"); label.htmlFor = id; label.textContent = f.label;
+    let ctl;
+    if (f.type === "check") {
+      ctl = document.createElement("input"); ctl.type = "checkbox"; ctl.id = id;
+      wrap.append(ctl, label);
+    } else {
+      const box = document.createElement("div"); box.className = "ctl";
+      if (f.type === "range") {
+        ctl = document.createElement("input"); ctl.type = "range"; ctl.id = id;
+        ctl.min = f.min; ctl.max = f.max; ctl.step = f.step;
+        const num = document.createElement("input"); num.type = "number"; num.step = f.step; num.id = id + "_n";
+        ctl.addEventListener("input", () => { num.value = ctl.value; });
+        num.addEventListener("input", () => { ctl.value = num.value; onStyleChange(); });
+        box.append(ctl, num);
+      } else if (f.type === "color") {
+        ctl = document.createElement("input"); ctl.type = "color"; ctl.id = id;
+        const hex = document.createElement("span"); hex.className = "hint"; hex.id = id + "_hex"; hex.style.margin = "0";
+        ctl.addEventListener("input", () => { hex.textContent = ctl.value.toUpperCase(); });
+        box.append(ctl, hex);
+      } else if (f.type === "select") {
+        ctl = document.createElement("select"); ctl.id = id;
+        for (const [v, t] of f.options) { const o = document.createElement("option"); o.value = v; o.textContent = t; ctl.appendChild(o); }
+        box.append(ctl);
+      } else if (f.type === "font") {
+        ctl = document.createElement("input"); ctl.type = "text"; ctl.id = id; ctl.setAttribute("list", "fontList");
+        ctl.style.flex = "1";
+        box.append(ctl);
+      }
+      wrap.append(label, box);
+    }
+    ctl.addEventListener(f.type === "font" ? "change" : "input", onStyleChange);
+    form.appendChild(wrap);
+  }
+  const dl = document.createElement("datalist"); dl.id = "fontList";
+  for (const name of (S.state?.fonts || [])) { const o = document.createElement("option"); o.value = name; dl.appendChild(o); }
+  form.appendChild(dl);
+}
+
+function setStyleForm(values) {
+  for (const f of FIELDS) {
+    if (!f.key || !(f.key in values)) continue;
+    const el = $("st_" + f.key), v = values[f.key];
+    if (f.type === "check") el.checked = !!v;
+    else if (f.type === "color") { el.value = String(v).toLowerCase(); $("st_" + f.key + "_hex").textContent = String(v).toUpperCase(); }
+    else if (f.type === "range") { el.value = v; $("st_" + f.key + "_n").value = v; }
+    else el.value = v;
+  }
+}
+
+function readStyleForm() {
+  const out = {};
+  for (const f of FIELDS) {
+    if (!f.key) continue;
+    const el = $("st_" + f.key);
+    if (f.type === "check") out[f.key] = el.checked;
+    else if (f.type === "range") out[f.key] = parseFloat($("st_" + f.key + "_n").value || el.value);
+    else if (f.type === "color") out[f.key] = el.value.toUpperCase();
+    else out[f.key] = el.value;
+  }
+  return out;
+}
+
+function onStyleChange() { S.styleValues = readStyleForm(); S.styleTouched = true; schedulePreview(); }
+
+function fillPresets(selected) {
+  const sel = $("presetSelect");
+  sel.replaceChildren();
+  for (const name of Object.keys(S.state.styles)) {
+    const o = document.createElement("option"); o.value = name; o.textContent = name; sel.appendChild(o);
+  }
+  sel.value = selected in S.state.styles ? selected : S.state.default_style;
+  S.preset = sel.value;
+}
+
+// ---------------------------------------------------------------- Project
+async function loadState() {
+  S.state = await api("/api/state");
+  const kb = $("keyBadge");
+  kb.textContent = S.state.has_key ? "ElevenLabs key ✓" : "No ElevenLabs key (.env)";
+  kb.className = "badge " + (S.state.has_key ? "ok" : "bad");
+  const inp = S.state.input_files;
+  const parts = Object.entries(inp).filter(([, v]) => v.length).map(([, v]) => v.join(", "));
+  $("inputInfo").textContent = parts.length ? "in input/: " + parts.join(" · ") : "input/ is empty";
+}
+
+function fillProjects(selected) {
+  const sel = $("projectSelect");
+  sel.replaceChildren();
+  if (!S.state.projects.length) {
+    const o = document.createElement("option"); o.textContent = "– no project yet –"; o.value = ""; sel.appendChild(o);
+  }
+  for (const n of S.state.projects) { const o = document.createElement("option"); o.value = n; o.textContent = n; sel.appendChild(o); }
+  if (selected) sel.value = selected;
+}
+
+async function openProject(name, keepStyle = false) {
+  if (!name) return;
+  S.project = name;
+  try { localStorage.setItem("lv_project", name); } catch (e) {}
+  $("projectSelect").value = name;
+  const d = S.data = await api(pUrl());
+  // Files
+  for (const kind of ["image", "audio", "text"]) {
+    const box = document.querySelector(`.drop[data-kind="${kind}"]`);
+    const f = d.files[kind];
+    box.querySelector(".fname").textContent = f ? f.name : "drop here or click";
+    let img = box.querySelector("img");
+    if (kind === "image") {
+      if (f) { if (!img) { img = document.createElement("img"); box.insertBefore(img, box.querySelector(".fname")); } img.src = f.url; }
+      else if (img) img.remove();
+    }
+  }
+  const ap = $("audioPlayer");
+  if (d.files.audio) { if (!ap.src.endsWith(d.files.audio.url)) ap.src = d.files.audio.url; ap.style.display = ""; }
+  else { ap.removeAttribute("src"); ap.style.display = "none"; }
+  // Texts
+  $("lyrics").value = d.text || ""; setDirty("text", false);
+  $("textInfo").textContent = d.files.text ? `File: ${d.files.text.name}` : "";
+  $("srt").value = d.srt || ""; setDirty("srt", false);
+  // Alignment
+  const ab = $("alignBadge");
+  let status = d.align_status;
+  if (status === "current" && !d.srt) status = "missing";  // response exists, subtitles not created yet
+  const st = { missing: ["not aligned yet", "warn"], current: ["aligned ✓", "ok"],
+               outdated: ["song or lyrics changed – align again", "bad"], unknown: ["unknown", ""] }[status];
+  ab.textContent = st[0]; ab.className = "badge " + st[1];
+  if (d.srt_error) toast("The SRT has an error:\n" + d.srt_error, true);
+  // Timeline
+  const slider = $("timeSlider");
+  const lastCue = d.cues.length ? d.cues[d.cues.length - 1].end : 0;
+  slider.max = Math.max(10, d.duration || 0, lastCue).toFixed(2);
+  const cs = $("cueSelect"); cs.replaceChildren();
+  const o0 = document.createElement("option"); o0.value = ""; o0.textContent = d.cues.length ? "Jump to line …" : "(no subtitles yet – the preview shows sample lines)"; cs.appendChild(o0);
+  for (const c of d.cues) {
+    const o = document.createElement("option"); o.value = c.n;
+    o.textContent = `${c.n}. ${fmtTime(c.start)}  ${c.text.replace(/\n/g, " / ")}`; cs.appendChild(o);
+  }
+  if (!keepStyle) {
+    // Style: last values set for the project, otherwise the preset
+    fillPresets(d.style || S.state.default_style);
+    const base = S.state.styles[S.preset] || {};
+    S.styleValues = Object.assign({}, base, d.style_values || {});
+    S.styleTouched = false;
+    setStyleForm(S.styleValues);
+    // Start time: first line
+    S.time = d.cues.length ? cueTime(d.cues[0]) : 2;
+  }
+  setTime(S.time, false);
+  // Trim
+  setTrim(d.trim && d.trim.end ? d.trim.end : null);
+  $("fadeOut").value = d.trim && d.trim.fade != null ? d.trim.fade : 2;
+  updateTrimInfo();
+  // Video
+  const rv = $("resultVideo");
+  if (d.video) { rv.src = d.video.url; rv.style.display = ""; $("renderInfo").textContent = `exists (${d.video.mb.toLocaleString("en-US")} MB)`; }
+  else { rv.removeAttribute("src"); rv.style.display = "none"; $("renderInfo").textContent = ""; }
+  schedulePreview(0);
+}
+
+function cueTime(c) { return c.start + (c.end - c.start) * 0.85; }
+
+// "5:40", "5:40.5", "340" or "1:02:03" -> seconds; empty -> null
+function parseTime(text) {
+  const s = String(text || "").trim().replace(",", ".");
+  if (!s) return null;
+  const parts = s.split(":").map(Number);
+  if (parts.some(isNaN)) return NaN;
+  return parts.reduce((acc, p) => acc * 60 + p, 0);
+}
+
+function setTrim(seconds) {
+  $("trimEnd").value = seconds == null ? "" : fmtTime(seconds);
+  updateTrimInfo();
+}
+
+function updateTrimInfo() {
+  const end = parseTime($("trimEnd").value);
+  const dur = S.data?.duration;
+  let msg = "";
+  if (end === null) msg = dur ? `Length: ${fmtTime(dur)} (whole song)` : "";
+  else if (isNaN(end) || end <= 0) msg = "Please enter a time like 5:40.";
+  else if (dur && end >= dur) msg = `The song is only ${fmtTime(dur)} long – it will not be trimmed.`;
+  else msg = `New length: ${fmtTime(end)}` + (dur ? ` (${fmtTime(dur - end)} shorter)` : "");
+  $("trimInfo").textContent = msg;
+}
+
+function setTime(t, preview = true) {
+  S.time = Math.max(0, t);
+  $("timeSlider").value = S.time;
+  $("timeLabel").textContent = fmtTime(S.time);
+  if (preview) schedulePreview(120);
+}
+
+function setDirty(which, v) {
+  S[which + "Dirty"] = v;
+  $(which + "Dirty").classList.toggle("show", v);
+}
+
+// ---------------------------------------------------------------- Preview
+function schedulePreview(delay = 250) {
+  clearTimeout(S.debounce);
+  S.debounce = setTimeout(runPreview, delay);
+}
+
+async function runPreview() {
+  if (!S.project || !S.data || !S.data.files.image) return;
+  if (S.previewBusy) { S.previewPending = true; return; }
+  S.previewBusy = true; S.previewPending = false;
+  $("busy").classList.add("show");
+  try {
+    const res = await postJSON(pUrl("/preview"), {
+      preset: S.preset, style: S.styleValues, time: S.time, full: $("fullRes").checked, remember: S.styleTouched });
+    const blob = await res.blob();
+    const info = JSON.parse(decodeURIComponent(res.headers.get("X-Info") || "%7B%7D"));
+    const img = $("previewImg");
+    const old = img.src;
+    img.src = URL.createObjectURL(blob);
+    if (old && old.startsWith("blob:")) URL.revokeObjectURL(old);
+    img.style.display = ""; $("clipVideo").style.display = "none"; $("clipVideo").pause();
+    $("stagePlaceholder").style.display = "none";
+    $("activeLine").textContent = info.sample ? "Sample lines from the lyrics (not aligned yet)"
+      : (info.active && info.active.length ? "Active: " + info.active.join(" / ") : "No line is active at this time.");
+    const w = $("warnings"); w.replaceChildren();
+    for (const m of info.warnings || []) { const d = document.createElement("div"); d.textContent = "⚠ " + m; w.appendChild(d); }
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    S.previewBusy = false;
+    $("busy").classList.remove("show");
+    if (S.previewPending) runPreview();
+  }
+}
+
+// ---------------------------------------------------------------- Jobs
+async function pollJob(job, logEl, progressEl) {
+  while (true) {
+    const { job: j } = await api(`/api/job/${job.id}`);
+    showLog(logEl, j.log, j.error);
+    if (progressEl) {
+      progressEl.className = "progress show";
+      progressEl.firstElementChild.style.width = ((j.progress || 0) * 100).toFixed(1) + "%";
+    }
+    if (j.status !== "running") return j;
+    await new Promise(r => setTimeout(r, 700));
+  }
+}
+
+async function saveSrtIfDirty() {
+  if (!S.srtDirty) return;
+  await postJSON(pUrl("/srt"), { srt: $("srt").value });
+  setDirty("srt", false);
+}
+
+// ---------------------------------------------------------------- Events
+function wire() {
+  $("projectSelect").addEventListener("change", e => openProject(e.target.value).catch(err => toast(err.message, true)));
+  $("createProject").addEventListener("click", async () => {
+    const name = $("newProject").value.trim();
+    if (!name) { toast("Please enter a name."); return; }
+    try {
+      const r = await postJSON("/api/project", { name });
+      $("newProject").value = "";
+      await loadState(); fillProjects(r.name); await openProject(r.name);
+      toast(`Project “${r.name}” is open.`);
+    } catch (e) { toast(e.message, true); }
+  });
+  $("openFolder").addEventListener("click", () => S.project && postJSON(`/api/open-folder/${encodeURIComponent(S.project)}`).catch(e => toast(e.message, true)));
+
+  // Uploads
+  const fi = $("fileInput");
+  const accept = { image: ".png,.jpg,.jpeg,.webp,.bmp", audio: ".mp3,.wav,.flac,.m4a,.aac,.ogg,.opus,.wma", text: ".txt" };
+  document.querySelectorAll(".drop").forEach(box => {
+    const kind = box.dataset.kind;
+    box.addEventListener("click", () => { if (!S.project) return toast("Please create or choose a project first."); S.uploadKind = kind; fi.accept = accept[kind]; fi.value = ""; fi.click(); });
+    box.addEventListener("dragover", e => { e.preventDefault(); box.classList.add("over"); });
+    box.addEventListener("dragleave", () => box.classList.remove("over"));
+    box.addEventListener("drop", e => { e.preventDefault(); box.classList.remove("over"); if (e.dataTransfer.files[0]) upload(kind, e.dataTransfer.files[0]); });
+  });
+  fi.addEventListener("change", () => { if (fi.files[0]) upload(S.uploadKind, fi.files[0]); });
+
+  $("importInput").addEventListener("click", async () => {
+    if (!S.project) return toast("Please create or choose a project first.");
+    try {
+      const r = await postJSON(pUrl("/import-input"));
+      toast("Imported: " + r.imported.join(", ") + (r.missing.length ? "\nNot imported: " + r.missing.join("; ") : ""));
+      await openProject(S.project);
+    } catch (e) { toast(e.message, true); }
+  });
+
+  // Lyrics
+  $("lyrics").addEventListener("input", () => setDirty("text", true));
+  $("saveText").addEventListener("click", async () => {
+    try {
+      const r = await postJSON(pUrl("/text"), { text: $("lyrics").value });
+      setDirty("text", false); toast(`Lyrics saved (${r.lines} sung lines).`);
+      await openProject(S.project, true);
+    } catch (e) { toast(e.message, true); }
+  });
+
+  // Align
+  $("alignBtn").addEventListener("click", async () => {
+    try {
+      if (S.textDirty) { await postJSON(pUrl("/text"), { text: $("lyrics").value }); setDirty("text", false); }
+      if (S.data.srt && !confirm("The subtitles will be recreated. Changes you made to them will be lost. Continue?")) return;
+      if ($("realign").checked && !confirm("Really align again at ElevenLabs? This uses API credits.")) return;
+      $("alignBtn").disabled = true;
+      const { job } = await postJSON(pUrl("/align"), { realign: $("realign").checked });
+      const j = await pollJob(job, $("alignLog"));
+      $("realign").checked = false;
+      if (j.status === "done") { toast("Lyrics aligned."); await openProject(S.project, true); setTime(S.data.cues.length ? cueTime(S.data.cues[0]) : 0); }
+      else toast(j.error || "Alignment failed", true);
+    } catch (e) { toast(e.message, true); }
+    finally { $("alignBtn").disabled = false; }
+  });
+
+  // SRT
+  $("srt").addEventListener("input", () => setDirty("srt", true));
+  $("saveSrt").addEventListener("click", async () => {
+    try {
+      const r = await postJSON(pUrl("/srt"), { srt: $("srt").value });
+      setDirty("srt", false); toast(`Subtitles saved (${r.cues} entries).`);
+      await openProject(S.project, true);
+    } catch (e) { toast(e.message, true); }
+  });
+
+  // Style
+  $("presetSelect").addEventListener("change", e => { S.preset = e.target.value; S.styleValues = Object.assign({}, S.state.styles[S.preset]); S.styleTouched = true; setStyleForm(S.styleValues); schedulePreview(0); });
+  $("loadPreset").addEventListener("click", () => { S.styleValues = Object.assign({}, S.state.styles[S.preset]); S.styleTouched = true; setStyleForm(S.styleValues); schedulePreview(0); });
+  $("saveStyle").addEventListener("click", async () => {
+    const name = $("saveStyleName").value.trim();
+    if (!name) return toast("Please enter a name for the preset.");
+    if (S.state.styles[name] && !confirm(`The preset “${name}” already exists. Overwrite it?`)) return;
+    try {
+      const r = await postJSON("/api/styles/save", { name, style: readStyleForm() });
+      S.state.styles = r.styles; fillPresets(r.name); $("saveStyleName").value = "";
+      toast(`Preset “${r.name}” saved to styles.json.`);
+    } catch (e) { toast(e.message, true); }
+  });
+
+  // Time
+  $("timeSlider").addEventListener("input", e => setTime(parseFloat(e.target.value)));
+  $("cueSelect").addEventListener("change", e => {
+    const c = S.data?.cues.find(c => String(c.n) === e.target.value); if (c) setTime(cueTime(c));
+  });
+  const jump = dir => {
+    const cues = S.data?.cues || []; if (!cues.length) return;
+    let idx = cues.findIndex(c => c.start <= S.time && S.time < c.end + 0.01);
+    if (idx < 0) idx = dir > 0 ? cues.findIndex(c => c.start > S.time) - 1 : cues.findIndex(c => c.start > S.time);
+    idx = Math.min(cues.length - 1, Math.max(0, idx + dir));
+    setTime(cueTime(cues[idx])); $("cueSelect").value = cues[idx].n;
+  };
+  $("prevCue").addEventListener("click", () => jump(-1));
+  $("nextCue").addEventListener("click", () => jump(1));
+  $("fullRes").addEventListener("change", () => schedulePreview(0));
+  $("stillBtn").addEventListener("click", () => schedulePreview(0));
+  $("clipBtn").addEventListener("click", async () => {
+    try {
+      await saveSrtIfDirty();
+      $("busy").classList.add("show");
+      const r = await postJSON(pUrl("/clip"), { preset: S.preset, style: S.styleValues, time: S.time, length: 10, full: $("fullRes").checked });
+      const v = $("clipVideo"); v.src = r.url; v.style.display = ""; $("previewImg").style.display = "none"; v.play();
+    } catch (e) { toast(e.message, true); }
+    finally { $("busy").classList.remove("show"); }
+  });
+
+  // Trim
+  $("trimEnd").addEventListener("input", updateTrimInfo);
+  $("trimFromVideo").addEventListener("click", () => {
+    const v = $("resultVideo");
+    if (!v.src || v.style.display === "none") return toast("There is no rendered video yet. You can use the preview time instead.");
+    if (!v.currentTime) return toast("Play the video below and pause at the desired spot.");
+    setTrim(v.currentTime);
+  });
+  $("trimFromPreview").addEventListener("click", () => setTrim(S.time));
+  $("trimClear").addEventListener("click", () => setTrim(null));
+
+  // Render
+  $("renderBtn").addEventListener("click", async () => {
+    try {
+      await saveSrtIfDirty();
+      const trimEnd = parseTime($("trimEnd").value);
+      if (trimEnd !== null && (isNaN(trimEnd) || trimEnd <= 0)) return toast("End of video: please enter a time like 5:40 or clear the field.", true);
+      const fadeOut = parseFloat($("fadeOut").value) || 0;
+      if (S.data.video && !confirm("The existing video will be overwritten. Continue?")) return;
+      $("renderBtn").disabled = true;
+      $("resultVideo").pause();
+      const { job } = await postJSON(pUrl("/render"), { preset: S.preset, style: S.styleValues, trim_end: trimEnd, fade_out: fadeOut });
+      const j = await pollJob(job, $("renderLog"), $("renderProgress"));
+      if (j.status === "done") { toast(`Video done (${j.result.mb.toLocaleString("en-US")} MB):\n${j.result.path}`); await openProject(S.project, true); }
+      else toast(j.error || "Rendering failed", true);
+    } catch (e) { toast(e.message, true); }
+    finally { $("renderBtn").disabled = false; }
+  });
+
+  window.addEventListener("beforeunload", e => { if (S.textDirty || S.srtDirty) { e.preventDefault(); e.returnValue = ""; } });
+}
+
+async function upload(kind, file) {
+  const box = document.querySelector(`.drop[data-kind="${kind}"]`);
+  box.querySelector(".fname").textContent = "uploading …";
+  const fd = new FormData(); fd.append("kind", kind); fd.append("file", file);
+  try {
+    await api(pUrl("/upload"), { method: "POST", body: fd });
+    toast(`${file.name} uploaded.`);
+    if (kind !== "image" && S.data.align_status === "current") toast(`${file.name} uploaded. Song or lyrics changed – please align again.`);
+    await openProject(S.project, true);
+  } catch (e) { toast(e.message, true); await openProject(S.project, true); }
+}
+
+// ---------------------------------------------------------------- Start
+(async function init() {
+  try {
+    await loadState();
+    buildStyleForm();
+    wire();
+    let last = null; try { last = localStorage.getItem("lv_project"); } catch (e) {}
+    const start = S.state.projects.includes(last) ? last : S.state.projects[0];
+    fillProjects(start);
+    if (start) await openProject(start);
+    else { fillPresets(S.state.default_style); S.styleValues = Object.assign({}, S.state.styles[S.preset]); setStyleForm(S.styleValues); }
+  } catch (e) { toast(e.message, true); }
+})();
+</script>
+</body>
+</html>
